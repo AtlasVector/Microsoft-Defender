@@ -1,9 +1,8 @@
-# Microsoft Sentinel  Workbook - Auth Abuse Hunting Dashboard
+# Microsoft Sentinel Workbook - Auth Abuse Hunting Dashboard
 
 **Personal goal:** get more comfortable with Microsoft Defender and Sentinel by building and using a real workbook for hunting in my lab (KQL, workbook layout, and turning logs into something actionable).
 
 I’ll keep improving on it as I learn, adding new panels, better parsing/enrichment, and correlation logic over time.
-
 ### **The workbook**
 This workbook is built to spot and prioritize authentication abuse across the lab by combining:
 - Windows Security Events (`SecurityEvent_CL`) - mainly 4625 (failed logons) to surface brute-force and  high volume auth failures on hosts/local accounts
