@@ -28,6 +28,7 @@ SecurityEvent_CL
 While digging into workbook structure, I noticed parameters can do more than just filter charts, so I decided to try them here as a simple highlight to mix dynamic variable with human readable text.
 <img src="Resources/parameters_use.png" alt="Parameters use" />
 #### **Highest Targeted Hosts  & Accounts** 
+
 <img src="Resources/parameter_scr.png" alt="Parameters" />
 
 ##### Hosts - `TopComputer`
