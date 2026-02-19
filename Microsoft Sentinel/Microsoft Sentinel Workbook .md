@@ -15,7 +15,7 @@ It’s designed to answer:
 ## **Windows failed logons (4625)**
 This section focuses on high volume failed logons and the biggest targets
 
-<img src="resources/Auth-Dash.png" alt="Windows failed logons" />
+<img src="../Microsoft-Defender/resources/Auth-Dash.png" alt="Windows failed logons" />
 
 ---
 ### **Failed Logons - KQL Query**
