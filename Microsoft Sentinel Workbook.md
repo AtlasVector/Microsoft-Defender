@@ -29,7 +29,8 @@ While digging into workbook structure, I noticed parameters can do more than jus
 <img src="Resources/parameters_use.png" alt="Parameters use" />
 #### **Highest Targeted Hosts  & Accounts** 
 <img src="Resources/parameter_scr.png" alt="Parameters" />
-##### Hosts - TopComputer
+
+##### Hosts - `TopComputer`
 ```KQL
 SecurityEvent_CL
 	| where TimeGenerated > ago(7d)
@@ -48,6 +49,7 @@ SecurityEvent_CL
 	| top 1 by Failed desc
 	| project Account_s
 ```
+
 
 ---
 ## Entra ID Sign-ins
