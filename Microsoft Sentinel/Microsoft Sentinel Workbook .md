@@ -13,8 +13,9 @@ It’s designed to answer:
 - Which account is being targeted the most?
 - Are failures concentrated on specific users, systems, or apps?
 ## **Windows failed logons (4625)**
-This section focuses on high volume failed logons and the biggest targets.
-<img src="/resources/Auth-Dash.png" />
+This section focuses on high volume failed logons and the biggest targets
+
+<img src="/Microsoft-Defender/resources/Auth-Dash.png" />
 
 ### **Failed Logons - KQL Query**
 ```KQL
