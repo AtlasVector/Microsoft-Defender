@@ -70,9 +70,9 @@ This part of the dashboards includes:
 #### **Logon attempts overview (per user) - KQL**
 ```KQL
 SigninLogs_CL
-| summarize Failed=countif(ResultType != 0), Success=countif(ResultType == 0), Total=count() by UserDisplayName_s, UserPrincipalName_s
-| where Failed > 0
-| sort by Failed desc, Total desc
+	| summarize Failed=countif(ResultType != 0), Success=countif(ResultType == 0), Total=count() by UserDisplayName_s, UserPrincipalName_s
+	| where Failed > 0
+	| sort by Failed desc, Total desc
 ```
 
 #### **Failed attempts per app - KQL**
