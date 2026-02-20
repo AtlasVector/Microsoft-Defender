@@ -4,4 +4,4 @@ A small personal collection of Microsoft Sentinel / Microsoft Defender lab conte
 ## Contents
 - **[Workbooks](./Workbooks/)**: Sentinel workbook documentation and queries (Auth Abuse Hunting Dashboard)
 - [**Auth Abuse Hunting Dashboard workbook doc**](./Workbooks/Microsoft%20Sentinel%20Workbook.md)
-- [**Resources](./Resources/)**: images/screenshots used in the docs
+- **[Resources](./Resources/)**: images/screenshots used in the docs
