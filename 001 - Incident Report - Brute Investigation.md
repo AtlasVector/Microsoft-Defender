@@ -21,11 +21,7 @@ Name: Joe Ben
 		- `TEST`
 		- `SERVER`
 - All attempts used **NTLM authentication**, which is considered not safe authentication methods
-![Windows failed logons](../Resources/Auth-Dash.png)
-
-
-![[image-1.png]]
-
+![4625 Activity Logs](./Resources/4625-Logs.png)
 # Investigation Summary 
 Over the past 24 hours, Sentinel telemetry from **Windows Security Event ID 4625 (Failed Logon)** shows a high volume authentication failure which might be an indicator for a brute force attempt against privileged  accounts. This attack is focused on two systems **SOC-FW-RDP** and **SHIR-Hive** with the highest target being **SOC-FW-RDP** for the account  **\ADMINISTRATOR** (**9,997** failed attempts). 
 
