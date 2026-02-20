@@ -29,21 +29,21 @@ Over the past 24 hours, Sentinel telemetry from **Windows Security Event ID 4625
 Additional attack  was observed against **\admin** (**1,988**), **\administrator** (**1,740**), and other account variants such as **\ADMIN**, **\USER**, and **\TEST**, indicating credential guessing against common administrative usernames. All observed attempts in this dataset used **NTLM** as the authentication package.
 
 ![Brute-Dash](resources/brute-dash.png)
-
 ## **The 5W - 1H**
-#### **Who:**
-- An unknown actor (internal vs. external not confirmed) generating repeated failed authentication attempts.
-#### **What:**
-- A high volume of failed login attempts (**Event ID 4625**) against multiple accounts.
-#### **When:**
-- **19 Feb 2026 ~08:06 AM** (based on available timestamps), with the activity appearing compressed into roughly **one minute**.
+
+- **Who:** An unknown actor (internal vs. external not confirmed) generating repeated failed authentication attempts.
+  
+- **What:** A high volume of failed login attempts (**Event ID 4625**) against multiple accounts.
+  
+- **When:** **19 Feb 2026 ~08:06 AM** (based on available timestamps), with the activity appearing compressed into roughly one minute
   Timestamp range: `2/19/2026, 8:06:29.412 AM `– `2/19/2026, 8:06:29.537 AM`
-#### **Where:**
-- Targeted hosts: **SOC-FW-RDP**, **SHIR-Hive**, **SOC-FW**, **SHIR-SAP**. 
-#### **Why:**
-- The attempts focused on common/privileged account names and were heaviest against **SOC-FW-RDP** and **SHIR-Hive**, suggesting an attempt to gain elevated access.
-#### **How:**
-- The high volume of attempts in a very short timeframe suggests the activity was automated, potentially using a script-based NTLM brute-force tool (for example, a Python **[NTLM Brute-Forcer](https://dhimasln.medium.com/ntlm-brute-force-attacks-a-practical-lab-simulation-detection-guide-365f5005dfea)**). The tool would repeatedly submit invalid credentials, generating Event ID 4625 (failed logon) entries and showing NTLM as the authentication package across the observed activity.
+  
+- **Where:** Targeted hosts: **SOC-FW-RDP**, **SHIR-Hive**, **SOC-FW**, **SHIR-SAP**. 
+  
+- **Why:** The attempts focused on common/privileged account names and were heaviest against **SOC-FW-RDP** and **SHIR-Hive**, 
+  suggesting an attempt to gain elevated access.
+  
+- **How:** The high volume of attempts in a very short timeframe suggests the activity was automated, potentially using a script-based NTLM brute-force tool (for example, a Python **[NTLM Brute-Forcer](https://dhimasln.medium.com/ntlm-brute-force-attacks-a-practical-lab-simulation-detection-guide-365f5005dfea)**). The tool would repeatedly submit invalid credentials, generating Event ID 4625 (failed logon) entries and showing NTLM as the authentication package across the observed activity.
 
 ### **Recommendations**
 #### Exposure & configuration recommendations
