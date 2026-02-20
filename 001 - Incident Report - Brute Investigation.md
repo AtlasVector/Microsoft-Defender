@@ -1,6 +1,6 @@
 ## Report Details:
 **Title**: 30 Day MyDFIR Microsoft Challenge  - DAY 7 
-**Name**: Joe Ben
+**Name**: YB
 #### MITRE ATT&CK: 
 - **Tactics:** #Credential_Access **ID:** #TA0006
 - **Techniques:** #Brute_Force  **ID:** #T1110 
