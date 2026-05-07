@@ -22,15 +22,14 @@
 		- `SERVER`
 - All attempts used **NTLM authentication**, which is considered not safe authentication methods
   
-![4625 Activity Logs](resources/4625-logs.png)
-
+![4625 Activity Logs](../Resources/4625-logs.png)
 
 ## Investigation Summary 
 Over the past 24 hours, Sentinel telemetry from **Windows Security Event ID 4625 (Failed Logon)** shows a high volume authentication failure which might be an indicator for a brute force attempt against privileged  accounts. This attack is focused on two systems **SOC-FW-RDP** and **SHIR-Hive** with the highest target being **SOC-FW-RDP** for the account  **\ADMINISTRATOR** (**9,997** failed attempts). 
 
 Additional attack  was observed against **\admin** (**1,988**), **\administrator** (**1,740**), and other account variants such as **\ADMIN**, **\USER**, and **\TEST**, indicating credential guessing against common administrative usernames. All observed attempts in this dataset used **NTLM** as the authentication package.
 
-![Brute-Dash](resources/brute-dash.png)
+![Brute-Dash](../Resources/brute-dash.png)
 ## **The 5W - 1H**
 
 - **Who:** An unknown actor (internal vs. external not confirmed) generating repeated failed authentication attempts.
