@@ -1,5 +1,5 @@
 ## Report Details:
-**Title**: 30 Day MyDFIR Microsoft Challenge  - DAY 7 
+**Title**: Brute-Force-Alert #001
 **Name**: YB
 #### MITRE ATT&CK: 
 - **Tactics:** #Credential_Access **ID:** #TA0006
